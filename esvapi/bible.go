@@ -5,7 +5,6 @@ import (
     bible "../."
     "net/http"
     "net/url"
-    "log"
     "strings"
     "encoding/xml"
 )
@@ -24,30 +23,6 @@ type esvApiProvider int
 
 func (esv esvApiProvider) Text(translation string, passage bible.Passage) (string, error) {
     fixedTitle := strings.Replace(passage.Title(), " ", "+", -1)
-    //fixedTitle := strings.Replace("John 3:1-20", " ", "+", -1)
-    
-    // crossway-bible passage content verse-unit
-    
-    type woc struct {
-        
-    }
-    
-    type cnt struct {
-        VerseUnit    []string   `xml:"verse-unit"`
-    }
-    
-    type psg struct {
-        Content    cnt   `xml:"content"`
-    }
-    
-    type cb struct {
-        Passage    psg   `xml:"passage"`
-    }
-    
-
-    
-
-    
     
     encoded := url.Values{
         "key": {"TEST"},
@@ -56,26 +31,52 @@ func (esv esvApiProvider) Text(translation string, passage bible.Passage) (strin
          "include-quote-entities": {url.QueryEscape("false")},
         }.Encode()
     
-    
-    
     resp, err := http.Get(passageQuery + encoded)
         
    if err != nil {return "", err}
+  
    
-   var v cb
+   decoder := xml.NewDecoder(resp.Body)
    
-   
-   
-   err = xml.NewDecoder(resp.Body).Decode(&v)
-   if err != nil {return "", err}
+   inVerseUnit := false
+   stacked := 0
    
    text := ""
-   for _, unit := range v.Passage.Content.VerseUnit {
-       text += unit + " "
+   
+   
+   token, err := decoder.Token()
+   
+   for token != nil && err == nil  {
+       switch t := token.(type) {
+       case xml.StartElement:
+            if t.Name.Local == "verse-unit" {
+                inVerseUnit = true
+            } else if inVerseUnit && t.Name.Local != "woc" {
+                stacked += 1
+            }
+            
+            if t.Name.Local == "q" {
+                text += "\""
+            }
+            
+       case xml.EndElement:
+            if t.Name.Local == "verse-unit" {
+                inVerseUnit = false
+                stacked = 0
+                text += " "
+            } else if inVerseUnit && t.Name.Local != "woc" {
+                stacked -= 1
+            }
+            
+       case xml.CharData:
+            if inVerseUnit && stacked == 0 {
+                text += string(t)
+            }
+       }
+       
+       token, err = decoder.Token()
    }
-    
-    log.Println(text)
-    
+   
     return text, nil
 }
 

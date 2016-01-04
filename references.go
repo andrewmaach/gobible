@@ -103,6 +103,10 @@ func SingleVersePassage(ref Reference) Passage {
     return Passage{ref, ref}
 }
 
+func MeultiVersePassage(ref Reference, verses int) Passage {
+    return Passage{ref, Reference(int(ref) + verses - 1)}
+}
+
 func (ref Reference) divide() (book, chapter, verse int) {
     code := int(ref)
     verse = code % MaxVerses

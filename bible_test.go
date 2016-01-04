@@ -2,6 +2,7 @@ package gobible_test
 
 import (
     "testing"
+    "strings"
     
     . "."
     esv "./esvapi"
@@ -45,8 +46,7 @@ func TestBasic(t *testing.T) {
         return
     }
     
-    passage := SingleVersePassage(MakeReference(43, 3, 1))
-    t.Log(passage.Title())
+    passage := MeultiVersePassage(MakeReference(43, 3, 15), 3)
     
     text, err := bible.Text(esv.EnglishStandardVersion, passage)
     if err != nil {
@@ -54,7 +54,10 @@ func TestBasic(t *testing.T) {
         return
     }
     
+    if !strings.Contains(text, "For God so loved the world") {
+        t.Error("John 3:16 pull request failed.")
+        return
+    }
     
-    
-    t.Log(text)
+   
 }
