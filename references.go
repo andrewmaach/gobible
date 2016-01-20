@@ -26,6 +26,19 @@ type Passage struct {
 	End Reference
 }
 
+func (ref Reference) String() string {
+    return strconv.Itoa(int(ref))
+}
+
+func (ref *Passage) String() string {
+    return ref.Begin.String() + "-" + ref.End.String()
+}
+
+
+func LoadPassage(begin, end int) Passage {
+    return Passage{Reference(begin), Reference(end)}
+}
+
 
 // Every book of the Bible in order, as an array.
 var englishBooksList = []string{

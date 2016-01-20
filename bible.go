@@ -19,6 +19,7 @@ func Bible(cache BibleCacheProvider) BibleHandle {
 type BibleHandle struct {
     providers map[string]BibleTextProvider // key=translation
     cache BibleCacheProvider
+    defaultTranslation string
 }
 
 func (bible *BibleHandle) RegisterProvider(handler BibleTextProvider) (error) {
@@ -31,6 +32,7 @@ func (bible *BibleHandle) RegisterProvider(handler BibleTextProvider) (error) {
         if !ok {
             useful = true
             bible.providers[translation] = handler
+            bible.defaultTranslation = translation
         }
     }
     
@@ -45,6 +47,10 @@ func (bible *BibleHandle) RegisterProvider(handler BibleTextProvider) (error) {
 
 func (bible *BibleHandle) Text(translation string, passage Passage) (string, error) {
     return bible.providers[translation].Text(translation, passage)
+}
+
+func (bible *BibleHandle) DefaultText(passage Passage) (string, error) {
+    return bible.providers[bible.defaultTranslation].Text(bible.defaultTranslation, passage)
 }
 
 

@@ -2,7 +2,7 @@ package esvapi
 
 
 import (
-    bible "../."
+    bible "github.com/andrewmaach/gobible"
     "net/http"
     "net/url"
     "strings"
