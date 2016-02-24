@@ -14,18 +14,25 @@ const passageQuery string = baseUrl + "passageQuery?"
 
 const EnglishStandardVersion string = "crossway-esv"
 
-func EsvApiProvider() esvApiProvider {
-    return esvApiProvider(1)
+func EsvApiProvider(accessCode string) esvApiProvider {
+    return esvApiProvider(accessCode)
 }
 
 
-type esvApiProvider int
+type esvApiProvider string
+
+func (esv esvApiProvider) accessCode() string {
+    return string(esv)
+}
 
 func (esv esvApiProvider) Text(translation string, passage bible.Passage) (string, error) {
-    fixedTitle := strings.Replace(passage.Title(), " ", "+", -1)
+    title, err := passage.Title()
+    if err != nil {return "", err}
+    
+    fixedTitle := strings.Replace(title, " ", "+", -1)
     
     encoded := url.Values{
-        "key": {"TEST"},
+        "key": {esv.accessCode()},
         "passage": {fixedTitle},
         "output-format": {url.QueryEscape("crossway-xml-1.0")},
          "include-quote-entities": {url.QueryEscape("false")},
@@ -51,7 +58,7 @@ func (esv esvApiProvider) Text(translation string, passage bible.Passage) (strin
        case xml.StartElement:
             if t.Name.Local == "verse-unit" {
                 inVerseUnit = true
-            } else if inVerseUnit && t.Name.Local != "woc" {
+            } else if inVerseUnit && t.Name.Local != "woc" && t.Name.Local != "span" {
                 stacked += 1
             }
             
@@ -64,7 +71,7 @@ func (esv esvApiProvider) Text(translation string, passage bible.Passage) (strin
                 inVerseUnit = false
                 stacked = 0
                 text += " "
-            } else if inVerseUnit && t.Name.Local != "woc" {
+            } else if inVerseUnit && t.Name.Local != "woc" && t.Name.Local != "span" {
                 stacked -= 1
             }
             

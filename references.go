@@ -2,6 +2,7 @@ package gobible
 
 import (
     "strconv"
+    "errors"
 )
 
 // The maximum number of verses in a chapter in the Bible, plus one.
@@ -147,6 +148,8 @@ func (ref Reference) verse() int {
 
 
 
+
+
 // Builds a Bible reference from individual numbers. You shouldn't need this.
 func newReference(book, chapter, verse int) Reference {
     k := verse
@@ -156,26 +159,84 @@ func newReference(book, chapter, verse int) Reference {
 }
 
 
+
+
 // Get the full title of a reference, e.g. "John 3:16"
 func (ref Reference) Title() string {
-    return ref.book() + " " +
-        strconv.Itoa(ref.chapter()) +
-        ":" + strconv.Itoa(ref.verse())
+    if ref.verse() == 0 {
+        return ref.book() + " " +
+            strconv.Itoa(ref.chapter())
+    } else {
+        return ref.book() + " " +
+            strconv.Itoa(ref.chapter()) +
+            ":" + strconv.Itoa(ref.verse())
+    }
+    
+
 }
 
 
-func (r Passage) Title() string {
+const MaxShortReferenceLength int = 3
+
+func shortPassage(r Passage) (Passage, error) {
+    if err := r.validate(); err != nil {
+        return r, err
+    }
+    
+    if r.Begin.verse() == 0 {
+        return Passage{
+            Begin: Reference(int(r.Begin) + 1),
+            End: Reference(int(r.Begin) + 1 + MaxShortReferenceLength),
+        }, nil
+    }
+    
+    if int(r.End) - int(r.Begin) < MaxShortReferenceLength {return r, nil}
+    
+
+    
+    return Passage{
+        Begin: r.Begin,
+        End: Reference(int(r.Begin) + MaxShortReferenceLength),
+    }, nil
+}
+
+
+
+func (r Passage) validate() error {
+    // If either begin or end are verse 0, both must be.
+    
+    if int(r.End) < int(r.Begin) {
+        return errors.New("Invalid scripture reference error - end of reference before beginning.")
+    }
+    
+    // Always true
+    if r.Begin.verse() == r.End.verse() {return nil}
+    
+    if r.Begin.verse() == 0 || r.Begin.verse() == 0 {
+        return errors.New("Invalid scripture reference error - if begin or end are chapter references, both must be.")
+     }
+     
+     return nil
+}
+
+func (r Passage) Title() (string, error) {
+    
+    if err := r.validate(); err != nil {
+        return "", err
+    }
+    
 	if r.Begin  == r.End {
-		return r.Begin.Title()
+		return r.Begin.Title(), nil
 	}
-	
+    
+    
 	if r.Begin.chapter() == r.End.chapter() {
-		return r.Begin.Title() + "-" + strconv.Itoa(r.End.verse())
+		return r.Begin.Title() + "-" + strconv.Itoa(r.End.verse()), nil
 	}
 	
 	if r.Begin.book()== r.End.book(){
-		return r.Begin.Title() + "-" +  strconv.Itoa(r.End.chapter())+":" +strconv.Itoa(r.End.verse())
+		return r.Begin.Title() + "-" +  strconv.Itoa(r.End.chapter())+":" +strconv.Itoa(r.End.verse()), nil
 	}
 	
-	return r.Begin.Title() + " - " + r.End.Title()
+	return r.Begin.Title() + " - " + r.End.Title(), nil
 }

@@ -50,7 +50,18 @@ func (bible *BibleHandle) Text(translation string, passage Passage) (string, err
 }
 
 func (bible *BibleHandle) DefaultText(passage Passage) (string, error) {
-    return bible.providers[bible.defaultTranslation].Text(bible.defaultTranslation, passage)
+    psg, err := shortPassage(passage)
+    if err != nil {
+        return "", err
+    }
+    
+    res, err := bible.providers[bible.defaultTranslation].Text(bible.defaultTranslation, psg)
+    
+    if psg != passage {
+        return res + "...", err
+    } else {
+        return res, err
+    }
 }
 
 
